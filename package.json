@@ -1,0 +1,12 @@
+{
+  "private": true,
+  "workspaces": [
+    "careercraft/frontend",
+    "careercraft/backend"
+  ],
+  "scripts": {
+    "dev": "npm --workspace=careercraft/frontend run dev",
+    "build": "npm --workspace=careercraft/frontend run build",
+    "start": "npm --workspace=careercraft/frontend run preview"
+  }
+}
