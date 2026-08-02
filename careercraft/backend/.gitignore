@@ -3,3 +3,4 @@ careercraft.db
 careercraft.db-journal
 careercraft.db-wal
 careercraft.db-shm
+.env

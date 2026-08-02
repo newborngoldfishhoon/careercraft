@@ -1,3 +1,27 @@
+const fs = require("fs");
+const path = require("path");
+
+function loadEnvFile(envPath) {
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, "utf8");
+    for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith("#")) {
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx !== -1) {
+          const key = trimmed.substring(0, eqIdx).trim();
+          const val = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, "");
+          if (key && !process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      }
+    }
+  }
+}
+loadEnvFile(path.join(__dirname, ".env"));
+loadEnvFile(path.join(__dirname, "../../.env"));
+
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
@@ -10,10 +34,74 @@ const { generateMentorReply } = require("./mentor");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o";
+const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "CareerCraft Mentor";
+const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "https://careercraft.example.com";
+
 
 app.use(cors());
 app.use(express.json());
 app.use(attachUser);
+
+async function getOpenRouterMentorReply(userId, userName, message) {
+  if (!OPENROUTER_API_KEY) return null;
+
+  const commitment = db.prepare(`SELECT * FROM commitments WHERE user_id = ?`).get(userId);
+  const career = commitment
+    ? db.prepare(`SELECT slug, title FROM careers WHERE slug = ?`).get(commitment.career_slug)
+    : null;
+  const roadmap = commitment ? getRoadmapWithProgress(commitment.career_slug, userId) : null;
+  const readiness = commitment ? computeReadiness(commitment.career_slug, userId) : null;
+
+  const systemContent = `You are CareerCraft's AI mentor. Use the user's commitment, roadmap progress, and readiness score to provide helpful, career-focused guidance. Respond in a friendly, concise way.`;
+  let contextContent = `User name: ${userName}
+`;
+  if (career) {
+    contextContent += `Committed career: ${career.title}\n`;
+  }
+  if (roadmap) {
+    contextContent += `Roadmap progress: ${roadmap.percent}%\n`;
+    const next = roadmap.nextMilestones?.[0];
+    if (next) {
+      contextContent += `Next milestone: ${next.title} (${next.stage}, ~${next.weeks}w)\n`;
+    }
+  }
+  if (readiness) {
+    contextContent += `Readiness score: ${readiness.score}%\n`;
+    if (readiness.priorityImprovements?.length) {
+      contextContent += `Top improvement: ${readiness.priorityImprovements[0]}\n`;
+    }
+  }
+
+  const payload = {
+    model: OPENROUTER_MODEL,
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "system", content: contextContent },
+      { role: "user", content: message },
+    ],
+  };
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "Referer": OPENROUTER_REFERER,
+      "X-Title": OPENROUTER_TITLE,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`OpenRouter request failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || null;
+}
 
 function serializeUser(row) {
   if (!row) return null;
@@ -757,15 +845,25 @@ app.get("/api/mentor/history", requireAuth, (req, res) => {
   res.json(rows);
 });
 
-app.post("/api/mentor/message", requireAuth, (req, res) => {
+app.post("/api/mentor/message", requireAuth, async (req, res) => {
   const content = (req.body?.content || "").trim();
   if (!content) return res.status(400).json({ error: "Message can't be empty." });
 
   const user = db.prepare(`SELECT name FROM users WHERE id = ?`).get(req.userId);
+  const userName = user?.name || "CareerCraft user";
 
   db.prepare(`INSERT INTO mentor_messages (user_id, role, content) VALUES (?, 'user', ?)`).run(req.userId, content);
 
-  const reply = generateMentorReply(req.userId, user.name, content);
+  let reply = null;
+  try {
+    reply = await getOpenRouterMentorReply(req.userId, userName, content);
+  } catch (err) {
+    console.error("OpenRouter mentor reply failed:", err);
+  }
+
+  if (!reply) {
+    reply = generateMentorReply(req.userId, userName, content);
+  }
 
   db.prepare(`INSERT INTO mentor_messages (user_id, role, content) VALUES (?, 'mentor', ?)`).run(req.userId, reply);
 
