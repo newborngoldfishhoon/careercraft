@@ -34,15 +34,78 @@ const { generateMentorReply } = require("./mentor");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o";
 const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "CareerCraft Mentor";
 const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "https://careercraft.example.com";
 
-
 app.use(cors());
 app.use(express.json());
 app.use(attachUser);
+
+async function getGroqMentorReply(userId, userName, message) {
+  if (!GROQ_API_KEY) return null;
+
+  const commitment = db.prepare(`SELECT * FROM commitments WHERE user_id = ?`).get(userId);
+  const career = commitment
+    ? db.prepare(`SELECT slug, title FROM careers WHERE slug = ?`).get(commitment.career_slug)
+    : null;
+  const roadmap = commitment ? getRoadmapWithProgress(commitment.career_slug, userId) : null;
+  const readiness = commitment ? computeReadiness(commitment.career_slug, userId) : null;
+
+  const systemContent = `You are CareerCraft's AI mentor. Your job is to give ultra-concise, direct, highly actionable career guidance.
+RULES:
+- Be extremely concise (2-4 sentences max or short bullet points).
+- NO fluff, filler words, or generic intros/outros (avoid "Hello!", "Hope this helps!", or generic pleasantries).
+- Get straight to the answer using the user's career context.`;
+  let contextContent = `User name: ${userName}\n`;
+  if (career) {
+    contextContent += `Committed career: ${career.title}\n`;
+  }
+  if (roadmap) {
+    contextContent += `Roadmap progress: ${roadmap.percent}%\n`;
+    const next = roadmap.nextMilestones?.[0];
+    if (next) {
+      contextContent += `Next milestone: ${next.title} (${next.stage}, ~${next.weeks}w)\n`;
+    }
+  }
+  if (readiness) {
+    contextContent += `Readiness score: ${readiness.score}%\n`;
+    if (readiness.priorityImprovements?.length) {
+      contextContent += `Top improvement: ${readiness.priorityImprovements[0]}\n`;
+    }
+  }
+
+  const payload = {
+    model: GROQ_MODEL,
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "system", content: contextContent },
+      { role: "user", content: message },
+    ],
+    temperature: 0.7,
+    max_tokens: 1024,
+  };
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`Groq request failed: ${response.status} ${response.statusText} - ${errorBody}`);
+  }
+
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content?.trim() || null;
+}
 
 async function getOpenRouterMentorReply(userId, userName, message) {
   if (!OPENROUTER_API_KEY) return null;
@@ -54,9 +117,12 @@ async function getOpenRouterMentorReply(userId, userName, message) {
   const roadmap = commitment ? getRoadmapWithProgress(commitment.career_slug, userId) : null;
   const readiness = commitment ? computeReadiness(commitment.career_slug, userId) : null;
 
-  const systemContent = `You are CareerCraft's AI mentor. Use the user's commitment, roadmap progress, and readiness score to provide helpful, career-focused guidance. Respond in a friendly, concise way.`;
-  let contextContent = `User name: ${userName}
-`;
+  const systemContent = `You are CareerCraft's AI mentor. Your job is to give ultra-concise, direct, highly actionable career guidance.
+RULES:
+- Be extremely concise (2-4 sentences max or short bullet points).
+- NO fluff, filler words, or generic intros/outros (avoid "Hello!", "Hope this helps!", or generic pleasantries).
+- Get straight to the answer using the user's career context.`;
+  let contextContent = `User name: ${userName}\n`;
   if (career) {
     contextContent += `Committed career: ${career.title}\n`;
   }
@@ -855,10 +921,20 @@ app.post("/api/mentor/message", requireAuth, async (req, res) => {
   db.prepare(`INSERT INTO mentor_messages (user_id, role, content) VALUES (?, 'user', ?)`).run(req.userId, content);
 
   let reply = null;
-  try {
-    reply = await getOpenRouterMentorReply(req.userId, userName, content);
-  } catch (err) {
-    console.error("OpenRouter mentor reply failed:", err);
+  if (GROQ_API_KEY) {
+    try {
+      reply = await getGroqMentorReply(req.userId, userName, content);
+    } catch (err) {
+      console.error("Groq AI mentor reply failed:", err);
+    }
+  }
+
+  if (!reply && OPENROUTER_API_KEY) {
+    try {
+      reply = await getOpenRouterMentorReply(req.userId, userName, content);
+    } catch (err) {
+      console.error("OpenRouter mentor reply failed:", err);
+    }
   }
 
   if (!reply) {

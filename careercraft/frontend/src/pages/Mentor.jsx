@@ -6,10 +6,10 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../lib/api.js";
 
 const STARTERS = [
-  "What should I do next?",
-  "I only have a few hours this week.",
-  "I'm feeling stuck.",
-  "Any resume tips?",
+  "🚀 What should I do next in my career roadmap?",
+  "⏳ I only have a few hours this week to upskill.",
+  "💡 I'm feeling stuck. How do I regain momentum?",
+  "📄 What are the best tips to polish my resume?",
 ];
 
 export default function Mentor() {
@@ -18,6 +18,7 @@ export default function Mentor() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -51,6 +52,12 @@ export default function Mentor() {
     }
   }
 
+  function handleCopy(text, idx) {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 2000);
+  }
+
   function onSubmit(e) {
     e.preventDefault();
     send();
@@ -61,21 +68,27 @@ export default function Mentor() {
       <Navbar />
       <section className="mentor-page">
         <div className="container mentor-page__inner">
-          <p className="eyebrow">AI Mentor</p>
-          <h1>Your ongoing guide, not a search box.</h1>
-          <p className="mentor-page__sub">
-            Unlike the quick assistant on the homepage, this remembers your committed career, roadmap progress, and
-            readiness score across visits.
-          </p>
+          <div className="mentor-page__header">
+            <span className="eyebrow">✨ AI Career Mentor</span>
+            <h1>Your ongoing guide, personalized for your goals.</h1>
+            <p className="mentor-page__sub">
+              Your AI Mentor remembers your committed career path, roadmap milestones, and readiness score across visits to give tailored advice.
+            </p>
+          </div>
 
           <div className="mentor-chat">
             {loading ? (
-              <p className="mentor-chat__status">Loading your conversation…</p>
+              <div className="mentor-chat__status">
+                <div className="ai-widget__spinner" />
+                <p>Loading your conversation history…</p>
+              </div>
             ) : (
               <div className="mentor-chat__log">
                 {messages.length === 0 && (
                   <div className="mentor-chat__empty">
-                    <p>No messages yet — try one of these:</p>
+                    <div className="mentor-chat__welcome-icon">🤖</div>
+                    <h3>Start your conversation with CareerCraft AI</h3>
+                    <p>Select a prompt below or type your custom question:</p>
                     <div className="mentor-chat__starters">
                       {STARTERS.map((s) => (
                         <button key={s} className="mentor-chat__starter" onClick={() => send(s)}>
@@ -87,12 +100,34 @@ export default function Mentor() {
                 )}
                 {messages.map((m, i) => (
                   <div key={i} className={"mentor-chat__bubble mentor-chat__bubble--" + m.role}>
-                    <p>{m.content}</p>
+                    <div className="mentor-chat__avatar">
+                      {m.role === "mentor" ? "🤖" : "👤"}
+                    </div>
+                    <div className="mentor-chat__bubble-body">
+                      {m.content.split("\n").map((line, lIdx) => (
+                        <p key={lIdx}>{line}</p>
+                      ))}
+                      {m.role === "mentor" && (
+                        <button
+                          className="mentor-chat__copy-btn"
+                          onClick={() => handleCopy(m.content, i)}
+                        >
+                          {copiedIndex === i ? "✓ Copied" : "Copy response"}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {sending && (
                   <div className="mentor-chat__bubble mentor-chat__bubble--mentor mentor-chat__bubble--typing">
-                    <p>Thinking…</p>
+                    <div className="mentor-chat__avatar">🤖</div>
+                    <div className="mentor-chat__bubble-body">
+                      <div className="ai-widget__typing-dots">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
                   </div>
                 )}
                 <div ref={bottomRef} />
@@ -102,13 +137,13 @@ export default function Mentor() {
             <form className="mentor-chat__input-row" onSubmit={onSubmit}>
               <input
                 type="text"
-                placeholder="Ask your mentor anything…"
+                placeholder="Ask your mentor anything about your career path..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={sending}
               />
               <button className="btn btn-primary" disabled={sending || !input.trim()}>
-                Send
+                {sending ? "Thinking..." : "Send Message"}
               </button>
             </form>
           </div>
@@ -118,3 +153,4 @@ export default function Mentor() {
     </div>
   );
 }
+

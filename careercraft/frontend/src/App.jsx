@@ -21,32 +21,37 @@ import ResourceLibrary from "./pages/ResourceLibrary.jsx";
 import Community from "./pages/Community.jsx";
 import CommunityDetail from "./pages/CommunityDetail.jsx";
 import PostDetail from "./pages/PostDetail.jsx";
+import AIAssistantWidget from "./components/AIAssistantWidget.jsx";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/explore" element={<CareerExplorer />} />
-      <Route path="/careers/:slug" element={<CareerDetail />} />
-      <Route path="/careers/:slug/roadmap" element={<CareerRoadmap />} />
-      <Route path="/assessment" element={<Assessment />} />
-      <Route path="/compare" element={<CareerCompare />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/mentor" element={<Mentor />} />
-      <Route path="/transition" element={<SkillGapAnalyzer />} />
-      <Route path="/opportunities" element={<OpportunityHub />} />
-      <Route path="/applications" element={<ApplicationTracker />} />
-      <Route path="/colleges" element={<CollegeExplorer />} />
-      <Route path="/colleges/:slug" element={<CollegeDetail />} />
-      <Route path="/exams" element={<EntranceExams />} />
-      <Route path="/exams/:slug" element={<ExamDetail />} />
-      <Route path="/resources" element={<ResourceLibrary />} />
-      <Route path="/community" element={<Community />} />
-      <Route path="/community/:slug" element={<CommunityDetail />} />
-      <Route path="/community/:slug/posts/:id" element={<PostDetail />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/explore" element={<CareerExplorer />} />
+        <Route path="/careers/:slug" element={<CareerDetail />} />
+        <Route path="/careers/:slug/roadmap" element={<CareerRoadmap />} />
+        <Route path="/assessment" element={<Assessment />} />
+        <Route path="/compare" element={<CareerCompare />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/mentor" element={<Mentor />} />
+        <Route path="/transition" element={<SkillGapAnalyzer />} />
+        <Route path="/opportunities" element={<OpportunityHub />} />
+        <Route path="/applications" element={<ApplicationTracker />} />
+        <Route path="/colleges" element={<CollegeExplorer />} />
+        <Route path="/colleges/:slug" element={<CollegeDetail />} />
+        <Route path="/exams" element={<EntranceExams />} />
+        <Route path="/exams/:slug" element={<ExamDetail />} />
+        <Route path="/resources" element={<ResourceLibrary />} />
+        <Route path="/community" element={<Community />} />
+        <Route path="/community/:slug" element={<CommunityDetail />} />
+        <Route path="/community/:slug/posts/:id" element={<PostDetail />} />
+      </Routes>
+      <AIAssistantWidget />
+    </>
   );
 }
+
