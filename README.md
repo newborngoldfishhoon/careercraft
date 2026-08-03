@@ -4,7 +4,7 @@ This is the first slice of the larger CareerCraft product spec: the public
 landing page, built as a real full-stack app rather than a static mock.
 
 ```
-careercraft/
+project-root/
 ├── backend/     Express API + SQLite database
 └── frontend/    React (Vite) landing page
 ```
