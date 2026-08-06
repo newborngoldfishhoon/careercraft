@@ -31,6 +31,7 @@ const { signToken, attachUser, requireAuth } = require("./auth");
 const { getRoadmapWithProgress } = require("./roadmap");
 const { computeReadiness } = require("./readiness");
 const { generateMentorReply } = require("./mentor");
+const { getDashboardHtml } = require("./dashboardHtml");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -40,6 +41,29 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o";
 const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "CareerCraft Mentor";
 const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "https://careercraft.example.com";
+
+const recentLogs = [];
+const MAX_LOGS = 50;
+
+app.use((req, res, next) => {
+  const start = Date.now();
+  const originalEnd = res.end;
+  res.end = function (...args) {
+    const duration = Date.now() - start;
+    if (!req.url.startsWith("/api/diagnostics")) {
+      recentLogs.unshift({
+        timestamp: new Date().toISOString(),
+        method: req.method,
+        url: req.originalUrl || req.url,
+        status: res.statusCode,
+        durationMs: duration
+      });
+      if (recentLogs.length > MAX_LOGS) recentLogs.pop();
+    }
+    return originalEnd.apply(this, args);
+  };
+  next();
+});
 
 app.use(cors());
 app.use(express.json());
@@ -1213,6 +1237,61 @@ app.get("/api/careers/:slug", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
+
+app.get("/api/diagnostics/stats", (req, res) => {
+  const getCount = (table) => {
+    try {
+      return db.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get().count;
+    } catch {
+      return 0;
+    }
+  };
+
+  const tables = [
+    "careers", "categories", "users", "commitments", "faqs",
+    "trust_stats", "colleges", "entrance_exams", "resources",
+    "communities", "posts", "newsletter_signups"
+  ];
+  const tableCounts = {};
+  tables.forEach(t => { tableCounts[t] = getCount(t); });
+
+  res.json({
+    status: "online",
+    uptimeSeconds: process.uptime(),
+    nodeVersion: process.version,
+    memoryUsage: process.memoryUsage(),
+    env: process.env.NODE_ENV || "development",
+    port: PORT,
+    database: {
+      connected: true,
+      tables: tableCounts
+    }
+  });
+});
+
+app.get("/api/diagnostics/logs", (req, res) => {
+  res.json({ logs: recentLogs });
+});
+
+app.get("/api/diagnostics/db-check", (req, res) => {
+  try {
+    const check = db.pragma("quick_check");
+    res.json({ status: "ok", checkResult: check });
+  } catch (err) {
+    res.status(500).json({ status: "error", message: err.message });
+  }
+});
+
+// Root & Diagnostics Dashboard UI
+app.get("/", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(getDashboardHtml(PORT));
+});
+
+app.get("/diagnostics", (req, res) => {
+  res.setHeader("Content-Type", "text/html");
+  res.send(getDashboardHtml(PORT));
+});
 
 app.listen(PORT, () => {
   console.log(`CareerCraft API running on http://localhost:${PORT}`);
