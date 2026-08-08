@@ -12,4 +12,7 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    allowedHosts: ["careercraft-frontend-production.up.railway.app"],
+  },
 });
