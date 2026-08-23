@@ -1,7 +1,5 @@
 const jwt = require("jsonwebtoken");
 
-// In a real deployment this must come from an environment variable.
-// A fixed dev fallback is fine for local development only.
 const JWT_SECRET = process.env.JWT_SECRET || "careercraft-dev-secret-change-me";
 const TOKEN_TTL = "30d";
 
@@ -17,8 +15,6 @@ function verifyToken(token) {
   }
 }
 
-// Attaches req.userId when a valid Bearer token is present. Does not reject
-// the request on its own — routes decide whether auth is required.
 function attachUser(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
@@ -27,7 +23,6 @@ function attachUser(req, res, next) {
   next();
 }
 
-// Use on routes that require a logged-in user.
 function requireAuth(req, res, next) {
   if (!req.userId) return res.status(401).json({ error: "Sign in required." });
   next();

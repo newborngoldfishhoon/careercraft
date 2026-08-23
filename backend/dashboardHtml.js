@@ -23,7 +23,7 @@ function getDashboardHtml(port) {
       --text-muted: #94a3b8;
       --text-dim: #64748b;
       --code-bg: #090d16;
-    }
+    } 
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     

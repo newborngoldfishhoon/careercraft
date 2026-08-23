@@ -1,8 +1,3 @@
-// Each question maps to one "dimension". Every option carries a tag; the
-// tag format is "dimension:value" (e.g. "interest:technical"). Careers are
-// tagged the same way in careers.match_tags, so scoring is just an overlap
-// count between the user's selected tags and each career's tags, weighted
-// by how much that dimension should matter.
 
 const QUESTIONS = [
   {
