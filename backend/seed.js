@@ -1,4 +1,6 @@
-const db = require("./db");
+const { countRows, insertIgnore, insertRow, selectOne } = require("./db");
+
+async function runSeed() {
 const bcrypt = require("bcryptjs");
 
 const categories = [
@@ -360,17 +362,20 @@ if (careerCount === 0) {
   basicCareers.forEach((c) => insertBasicCareer.run(c));
 }
 
-const insertStat = db.prepare(`INSERT INTO trust_stats (label, value, sort_order) VALUES (?, ?, ?)`);
-const statCount = db.prepare(`SELECT COUNT(*) AS n FROM trust_stats`).get().n;
-if (statCount === 0) trustStats.forEach((s) => insertStat.run(s[0], s[1], s[2]));
+const statCount = await countRows("trust_stats");
+  if (statCount === 0) {
+    for (const s of trustStats) await insertRow("trust_stats", { label: s[0], value: s[1], sort_order: s[2] });
+  }
 
-const insertStory = db.prepare(`INSERT INTO success_stories (headline, path, quote, sort_order) VALUES (?, ?, ?, ?)`);
-const storyCount = db.prepare(`SELECT COUNT(*) AS n FROM success_stories`).get().n;
-if (storyCount === 0) successStories.forEach((s) => insertStory.run(...s));
+const storyCount = await countRows("success_stories");
+  if (storyCount === 0) {
+    for (const s of successStories) await insertRow("success_stories", { headline: s[0], path: s[1], quote: s[2], sort_order: s[3] });
+  }
 
-const insertFaq = db.prepare(`INSERT INTO faqs (question, answer, sort_order) VALUES (?, ?, ?)`);
-const faqCount = db.prepare(`SELECT COUNT(*) AS n FROM faqs`).get().n;
-if (faqCount === 0) faqs.forEach((f, i) => insertFaq.run(f[0], f[1], i + 1));
+const faqCount = await countRows("faqs");
+  if (faqCount === 0) {
+    for (let i = 0; i < faqs.length; i++) await insertRow("faqs", { question: faqs[i][0], answer: faqs[i][1], sort_order: i + 1 });
+  }
 
 const opportunities = [
   // AI Engineer
@@ -403,12 +408,10 @@ const opportunities = [
   ["Robotics Research Program", "Research Program", "mechanical-engineer", "MIT Lincoln Laboratory", "Cambridge, MA", 0, "A summer research program for undergraduate mechanical engineers.", "https://ll.mit.edu", "2026-10-01", 20],
 ];
 
-const insertOpportunity = db.prepare(`
-  INSERT INTO opportunities (title, type, career_slug, organization, location, remote, description, url, deadline, min_readiness)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
-const opportunityCount = db.prepare(`SELECT COUNT(*) AS n FROM opportunities`).get().n;
-if (opportunityCount === 0) opportunities.forEach((o) => insertOpportunity.run(...o));
+const opportunityCount = await countRows("opportunities");
+  if (opportunityCount === 0) {
+    for (const o of opportunities) await insertRow("opportunities", { title: o[0], type: o[1], career_slug: o[2], organization: o[3], location: o[4], remote: o[5], description: o[6], url: o[7], deadline: o[8], min_readiness: o[9] });
+  }
 
 const colleges = [
   {
@@ -527,16 +530,10 @@ const colleges = [
   },
 ];
 
-const insertCollege = db.prepare(`
-  INSERT INTO colleges (slug, name, type, location, country, overview, programs, fees, scholarships,
-    placements_percent, avg_package, top_recruiters, admission_requirements, acceptance_rate,
-    campus_highlights, rating, related_career_slugs)
-  VALUES (@slug, @name, @type, @location, @country, @overview, @programs, @fees, @scholarships,
-    @placements_percent, @avg_package, @top_recruiters, @admission_requirements, @acceptance_rate,
-    @campus_highlights, @rating, @related_career_slugs)
-`);
-const collegeCount = db.prepare(`SELECT COUNT(*) AS n FROM colleges`).get().n;
-if (collegeCount === 0) colleges.forEach((c) => insertCollege.run(c));
+const collegeCount = await countRows("colleges");
+  if (collegeCount === 0) {
+    for (const c of colleges) await insertRow("colleges", c);
+  }
 
 const exams = [
   {
@@ -593,14 +590,10 @@ const exams = [
   },
 ];
 
-const insertExam = db.prepare(`
-  INSERT INTO entrance_exams (slug, name, overview, eligibility, syllabus, difficulty, prep_resources,
-    important_dates, past_trends, recommended_strategy, related_career_slugs)
-  VALUES (@slug, @name, @overview, @eligibility, @syllabus, @difficulty, @prep_resources,
-    @important_dates, @past_trends, @recommended_strategy, @related_career_slugs)
-`);
-const examCount = db.prepare(`SELECT COUNT(*) AS n FROM entrance_exams`).get().n;
-if (examCount === 0) exams.forEach((e) => insertExam.run(e));
+const examCount = await countRows("entrance_exams");
+  if (examCount === 0) {
+    for (const e of exams) await insertRow("entrance_exams", e);
+  }
 
 const resources = [
   // AI Engineer
@@ -638,12 +631,10 @@ const resources = [
   ["GrabCAD", "Community", "mechanical-engineer", "Intermediate", "Free", "https://grabcad.com", "A library of CAD models and an active engineering design community.", 0, 1],
 ];
 
-const insertResource = db.prepare(`
-  INSERT INTO resources (title, type, career_slug, level, cost, url, description, is_trending, is_community_favorite)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
-const resourceCount = db.prepare(`SELECT COUNT(*) AS n FROM resources`).get().n;
-if (resourceCount === 0) resources.forEach((r) => insertResource.run(...r));
+const resourceCount = await countRows("resources");
+  if (resourceCount === 0) {
+    for (const r of resources) await insertRow("resources", { title: r[0], type: r[1], career_slug: r[2], level: r[3], cost: r[4], url: r[5], description: r[6], is_trending: r[7], is_community_favorite: r[8] });
+  }
 
 // --- Demo users (authors for seeded community posts) -----------------
 // These are ordinary rows in the same `users` table — just seeded so the
@@ -656,9 +647,14 @@ const demoUsers = [
   ["Sam Torres", "sam.demo@careercraft.local"],
 ];
 const demoPasswordHash = bcrypt.hashSync("careercraft-demo-user", 10);
-const insertDemoUser = db.prepare(`INSERT OR IGNORE INTO users (name, email, password_hash) VALUES (?, ?, ?)`);
-demoUsers.forEach(([name, email]) => insertDemoUser.run(name, email, demoPasswordHash));
-const demoUserIds = demoUsers.map(([, email]) => db.prepare(`SELECT id FROM users WHERE email = ?`).get(email).id);
+const demoUserIds = [];
+  for (const [name, email] of demoUsers) {
+    let user = await insertIgnore("users", { name, email, password_hash: demoPasswordHash });
+    if (!user) {
+      user = await selectOne("users", { filters: { email } });
+    }
+    demoUserIds.push(user.id);
+  }
 
 // --- Communities --------------------------------------------------------
 const communities = [
@@ -672,10 +668,9 @@ const communities = [
   ["research", "Research", "Academic and industry research career paths.", "science", 8],
   ["government-exams", "Government Exams", "Civil services, public sector, and competitive exam prep.", "government", 9],
 ];
-const insertCommunity = db.prepare(
-  `INSERT OR IGNORE INTO communities (slug, name, description, category_slug, sort_order) VALUES (?, ?, ?, ?, ?)`
-);
-communities.forEach((c) => insertCommunity.run(...c));
+for (const c of communities) {
+    await insertIgnore("communities", { slug: c[0], name: c[1], description: c[2], category_slug: c[3], sort_order: c[4] });
+  }
 
 // --- Seed posts + comments ------------------------------------------------
 const posts = [
@@ -689,44 +684,41 @@ const posts = [
   ["government-exams", 3, "Advice", "Balancing exam prep with a full-time job", "Anyone successfully cleared a government exam while working full-time? How did you structure your week?"],
 ];
 
-const insertPost = db.prepare(
-  `INSERT INTO posts (community_slug, user_id, post_type, title, body) VALUES (?, ?, ?, ?, ?)`
-);
-const postCount = db.prepare(`SELECT COUNT(*) AS n FROM posts`).get().n;
-let insertedPostIds = [];
-if (postCount === 0) {
-  insertedPostIds = posts.map((p) => {
-    const [communitySlug, userIdx, type, title, body] = p;
-    const info = insertPost.run(communitySlug, demoUserIds[userIdx], type, title, body);
-    return info.lastInsertRowid;
-  });
+const postCount = await countRows("posts");
+  let insertedPostIds = [];
+  if (postCount === 0) {
+    for (const p of posts) {
+      const [communitySlug, userIdx, type, title, body] = p;
+      const inserted = await insertRow("posts", { community_slug: communitySlug, user_id: demoUserIds[userIdx], post_type: type, title, body });
+      insertedPostIds.push(inserted.id);
+    }
 
-  const comments = [
-    [0, 1, "Honestly, just start building. You'll pick up the math you need as you hit walls — trying to front-load all of linear algebra first is how most people quit."],
-    [0, 2, "Disagree a bit — at least understand what a gradient IS before you start, or debugging will feel like magic."],
-    [1, 3, "This is really encouraging, thank you for sharing the timeline."],
-    [2, 0, "picoCTF for pure fundamentals, TryHackMe once you want guided paths with more hand-holding."],
-    [4, 1, "Agreed on the generic portfolio projects — I'd pair it with one fully original project."],
-  ];
-  comments.forEach(([postIdx, userIdx, body]) => {
-    db.prepare(`INSERT INTO comments (post_id, user_id, body) VALUES (?, ?, ?)`).run(
-      insertedPostIds[postIdx],
-      demoUserIds[userIdx],
-      body
-    );
+    const comments = [
+      [0, 1, "Honestly, just start building. You'll pick up the math you need as you hit walls — trying to front-load all of linear algebra first is how most people quit."],
+      [0, 2, "Disagree a bit — at least understand what a gradient IS before you start, or debugging will feel like magic."],
+      [1, 3, "This is really encouraging, thank you for sharing the timeline."],
+      [2, 0, "picoCTF for pure fundamentals, TryHackMe once you want guided paths with more hand-holding."],
+      [4, 1, "Agreed on the generic portfolio projects — I'd pair it with one fully original project."],
+    ];
+    for (const [postIdx, userIdx, body] of comments) {
+      await insertRow("comments", { post_id: insertedPostIds[postIdx], user_id: demoUserIds[userIdx], body });
+    }
+  }
+
+  console.log("Seed complete:", {
+    categories: await countRows("categories"),
+    careers: await countRows("careers"),
+    trustStats: await countRows("trust_stats"),
+    successStories: await countRows("success_stories"),
+    faqs: await countRows("faqs"),
+    opportunities: await countRows("opportunities"),
+    colleges: await countRows("colleges"),
+    entranceExams: await countRows("entrance_exams"),
+    resources: await countRows("resources"),
+    communities: await countRows("communities"),
+    posts: await countRows("posts"),
   });
 }
 
-console.log("Seed complete:", {
-  categories: db.prepare("SELECT COUNT(*) AS n FROM categories").get().n,
-  careers: db.prepare("SELECT COUNT(*) AS n FROM careers").get().n,
-  trustStats: db.prepare("SELECT COUNT(*) AS n FROM trust_stats").get().n,
-  successStories: db.prepare("SELECT COUNT(*) AS n FROM success_stories").get().n,
-  faqs: db.prepare("SELECT COUNT(*) AS n FROM faqs").get().n,
-  opportunities: db.prepare("SELECT COUNT(*) AS n FROM opportunities").get().n,
-  colleges: db.prepare("SELECT COUNT(*) AS n FROM colleges").get().n,
-  entranceExams: db.prepare("SELECT COUNT(*) AS n FROM entrance_exams").get().n,
-  resources: db.prepare("SELECT COUNT(*) AS n FROM resources").get().n,
-  communities: db.prepare("SELECT COUNT(*) AS n FROM communities").get().n,
-  posts: db.prepare("SELECT COUNT(*) AS n FROM posts").get().n,
-});
+
+runSeed().catch(err => { console.error("Seed error:", err); process.exit(1); });

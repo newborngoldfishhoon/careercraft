@@ -1,4 +1,4 @@
-const db = require("./db");
+const { selectOne, selectAll } = require("./db");
 
 function parseJsonSafe(v) {
   try {
@@ -11,10 +11,11 @@ function parseJsonSafe(v) {
 // Builds the full roadmap (all three stages) for a career, marking which
 // milestones a given user has completed. Pass userId = null for an
 // unauthenticated view (nothing marked complete).
-function getRoadmapWithProgress(careerSlug, userId) {
-  const career = db
-    .prepare(`SELECT slug, title, roadmap_beginner, roadmap_intermediate, roadmap_advanced FROM careers WHERE slug = ?`)
-    .get(careerSlug);
+async function getRoadmapWithProgress(careerSlug, userId) {
+  const career = await selectOne("careers", {
+    columns: "slug, title, roadmap_beginner, roadmap_intermediate, roadmap_advanced",
+    filters: { slug: careerSlug },
+  });
   if (!career) return null;
 
   const stages = [
@@ -28,9 +29,10 @@ function getRoadmapWithProgress(careerSlug, userId) {
 
   let completedIds = new Set();
   if (userId) {
-    const rows = db
-      .prepare(`SELECT milestone_id FROM roadmap_progress WHERE user_id = ? AND career_slug = ?`)
-      .all(userId, careerSlug);
+    const rows = await selectAll("roadmap_progress", {
+      columns: "milestone_id",
+      filters: { user_id: userId, career_slug: careerSlug },
+    });
     completedIds = new Set(rows.map((r) => r.milestone_id));
   }
 
@@ -59,4 +61,3 @@ function getRoadmapWithProgress(careerSlug, userId) {
 }
 
 module.exports = { getRoadmapWithProgress };
-

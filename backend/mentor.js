@@ -1,14 +1,17 @@
-const db = require("./db");
+const { selectOne } = require("./db");
 const { getRoadmapWithProgress } = require("./roadmap");
 const { computeReadiness } = require("./readiness");
 
-function getMentorContext(userId) {
-  const commitment = db.prepare(`SELECT * FROM commitments WHERE user_id = ?`).get(userId);
+async function getMentorContext(userId) {
+  const commitment = await selectOne("commitments", { filters: { user_id: userId } });
   if (!commitment) return { commitment: null };
 
-  const career = db.prepare(`SELECT slug, title FROM careers WHERE slug = ?`).get(commitment.career_slug);
-  const roadmap = getRoadmapWithProgress(commitment.career_slug, userId);
-  const readiness = computeReadiness(commitment.career_slug, userId);
+  const career = await selectOne("careers", {
+    columns: "slug, title",
+    filters: { slug: commitment.career_slug },
+  });
+  const roadmap = await getRoadmapWithProgress(commitment.career_slug, userId);
+  const readiness = await computeReadiness(commitment.career_slug, userId);
 
   return { commitment, career, roadmap, readiness };
 }
@@ -21,8 +24,8 @@ function greetingForNoCommitment(userName) {
   );
 }
 
-function generateMentorReply(userId, userName, message) {
-  const ctx = getMentorContext(userId);
+async function generateMentorReply(userId, userName, message) {
+  const ctx = await getMentorContext(userId);
   const text = (message || "").toLowerCase();
 
   if (!ctx.commitment) {

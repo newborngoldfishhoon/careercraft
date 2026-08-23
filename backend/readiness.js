@@ -1,4 +1,4 @@
-const db = require("./db");
+const { selectOne, selectAll } = require("./db");
 const { getRoadmapWithProgress } = require("./roadmap");
 
 function parseJsonSafe(v) {
@@ -11,10 +11,11 @@ function parseJsonSafe(v) {
 
 const IMPORTANCE_RANK = { Critical: 3, High: 2, Moderate: 1 };
 
-function computeReadiness(careerSlug, userId) {
-  const career = db
-    .prepare(`SELECT slug, title, skills_technical, skills_soft, skills_industry FROM careers WHERE slug = ?`)
-    .get(careerSlug);
+async function computeReadiness(careerSlug, userId) {
+  const career = await selectOne("careers", {
+    columns: "slug, title, skills_technical, skills_soft, skills_industry",
+    filters: { slug: careerSlug },
+  });
   if (!career) return null;
 
   const allSkills = [
@@ -23,9 +24,10 @@ function computeReadiness(careerSlug, userId) {
     ...parseJsonSafe(career.skills_industry).map((s) => ({ ...s, group: "Industry" })),
   ];
 
-  const acquiredRows = db
-    .prepare(`SELECT skill_name FROM user_skills WHERE user_id = ? AND career_slug = ?`)
-    .all(userId, careerSlug);
+  const acquiredRows = await selectAll("user_skills", {
+    columns: "skill_name",
+    filters: { user_id: userId, career_slug: careerSlug },
+  });
   const acquiredNames = new Set(acquiredRows.map((r) => r.skill_name));
 
   const skillsWithStatus = allSkills.map((s) => ({ ...s, acquired: acquiredNames.has(s.name) }));
@@ -33,7 +35,7 @@ function computeReadiness(careerSlug, userId) {
   const skillsAcquiredCount = skillsWithStatus.filter((s) => s.acquired).length;
   const skillsPercent = skillsTotal ? Math.round((skillsAcquiredCount / skillsTotal) * 100) : 0;
 
-  const roadmap = getRoadmapWithProgress(careerSlug, userId);
+  const roadmap = await getRoadmapWithProgress(careerSlug, userId);
   const roadmapPercent = roadmap ? roadmap.percent : 0;
 
   // Roadmap progress is weighted more heavily — it's the more concrete,
