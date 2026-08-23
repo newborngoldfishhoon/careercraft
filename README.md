@@ -1,4 +1,6 @@
-# CareerCraft — Landing Page (full-stack starter)
+# CareerCraft - Landing Page (full-stack starter)
+
+**please note that this is ai generated readme, as i was running low of time so..!!!**
 
 This is the first slice of the larger CareerCraft product spec: the public
 landing page, built as a real full-stack app rather than a static mock.
@@ -23,7 +25,7 @@ project-root/
   pathways, certifications, specializations, and a country-by-country salary
   and demand table. Four careers (AI Engineer, UX Designer, Registered Nurse,
   Product Manager) have full profiles seeded; the rest appear in the Explorer
-  with core stats and a "full profile coming" note on their detail page —
+  with core stats and a "full profile coming" note on their detail page,
   this shows how the page degrades gracefully for careers that aren't fully
   written up yet.
 - **Career Match Assessment** (`/assessment`) — 8-question quiz, tag-weighted
