@@ -7,7 +7,7 @@ landing page, built as a real full-stack app rather than a static mock.
 
 ```
 project-root/
-├── backend/     Express API + SQLite database
+├── backend/     Express API + Supabase PostgreSQL database
 └── frontend/    React (Vite) landing page
 ```
 
@@ -131,7 +131,7 @@ project-root/
 - **Journey Rail** — the page's signature visual device: a scroll-linked rail
   on the right edge that steps through the platform's own ten-stage lifecycle
   (Discover → ... → Grow) as you scroll the landing page.
-- A SQLite database (`better-sqlite3`) with categories, careers (core fields
+- A Supabase PostgreSQL database with categories, careers (core fields
   plus rich detail columns), per-country career data, trust stats, success
   stories, and FAQs.
 
@@ -154,7 +154,7 @@ install packages, so run these steps on your own machine.
 ```bash
 cd backend
 npm install
-npm run seed     # creates and populates careercraft.db
+npm run seed     # populates the Supabase database
 npm start        # http://localhost:4000
 ```
 
@@ -244,7 +244,7 @@ content, managing users). All build on this same backend and reuse
 While adding Community this round, I found that an earlier session's schema
 for `colleges` and `entrance_exams` had silently duplicated — two
 `CREATE TABLE IF NOT EXISTS` blocks with different, incompatible columns.
-Because SQLite's `IF NOT EXISTS` makes the second one a no-op, the seed
+Because PostgreSQL's `IF NOT EXISTS` makes the second one a no-op, the seed
 script and API routes (written against the newer columns) would have thrown
 "no such column" errors against the older table that actually won at
 runtime. Also found: a redundant, conflicting Community schema

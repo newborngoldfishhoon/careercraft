@@ -469,7 +469,7 @@ function getDashboardHtml(port) {
       </div>
       <div class="metric-card">
         <div class="metric-label">Database Status</div>
-        <div class="metric-val" style="color:var(--accent-cyan);">SQLite WAL</div>
+        <div class="metric-val" style="color:var(--accent-cyan);">Supabase / PostgreSQL</div>
         <div class="metric-sub" id="db-integrity-val">Integrity: Checking...</div>
       </div>
       <div class="metric-card">
@@ -526,7 +526,7 @@ function getDashboardHtml(port) {
     <!-- TAB 2: Database Inspection -->
     <section id="tab-database" class="tab-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-        <h3>SQLite Tables & Data Records</h3>
+        <h3>Supabase Tables & Data Records</h3>
         <button class="btn-send" onclick="loadDbStats()">🔄 Refresh DB Counts</button>
       </div>
       <div class="table-grid" id="db-tables-grid">

@@ -1,7 +1,7 @@
 {
   "name": "careercraft-backend",
   "version": "1.0.0",
-  "description": "CareerCraft API — serves landing page content (categories, trust stats, featured/trending careers, FAQs, search) from SQLite.",
+  "description": "CareerCraft API — serves landing page content (categories, trust stats, featured/trending careers, FAQs, search) using Supabase PostgreSQL.",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
