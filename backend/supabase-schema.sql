@@ -273,65 +273,86 @@ CREATE TABLE IF NOT EXISTS newsletter_signups (
 
 -- Public read-only tables (seed data)
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON categories;
 CREATE POLICY "anon_full_access" ON categories FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE careers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON careers;
 CREATE POLICY "anon_full_access" ON careers FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE career_countries ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON career_countries;
 CREATE POLICY "anon_full_access" ON career_countries FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE trust_stats ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON trust_stats;
 CREATE POLICY "anon_full_access" ON trust_stats FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE success_stories ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON success_stories;
 CREATE POLICY "anon_full_access" ON success_stories FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE faqs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON faqs;
 CREATE POLICY "anon_full_access" ON faqs FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON opportunities;
 CREATE POLICY "anon_full_access" ON opportunities FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE colleges ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON colleges;
 CREATE POLICY "anon_full_access" ON colleges FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE entrance_exams ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON entrance_exams;
 CREATE POLICY "anon_full_access" ON entrance_exams FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON resources;
 CREATE POLICY "anon_full_access" ON resources FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE communities ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON communities;
 CREATE POLICY "anon_full_access" ON communities FOR ALL USING (true) WITH CHECK (true);
 
 -- User data tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON users;
 CREATE POLICY "anon_full_access" ON users FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE commitments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON commitments;
 CREATE POLICY "anon_full_access" ON commitments FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE roadmap_progress ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON roadmap_progress;
 CREATE POLICY "anon_full_access" ON roadmap_progress FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE saved_careers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON saved_careers;
 CREATE POLICY "anon_full_access" ON saved_careers FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE user_skills ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON user_skills;
 CREATE POLICY "anon_full_access" ON user_skills FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE mentor_messages ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON mentor_messages;
 CREATE POLICY "anon_full_access" ON mentor_messages FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE applications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON applications;
 CREATE POLICY "anon_full_access" ON applications FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON posts;
 CREATE POLICY "anon_full_access" ON posts FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON comments;
 CREATE POLICY "anon_full_access" ON comments FOR ALL USING (true) WITH CHECK (true);
 
 ALTER TABLE newsletter_signups ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_full_access" ON newsletter_signups;
 CREATE POLICY "anon_full_access" ON newsletter_signups FOR ALL USING (true) WITH CHECK (true);
