@@ -1,3 +1,19 @@
+const fs = require('fs');
+const path = require('path');
+function loadEnv() {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split('\n').forEach((line) => {
+      const match = line.match(/^([^#\s][^=]+)=(.*)$/);
+      if (match) {
+        process.env[match[1].trim()] = match[2].trim();
+      }
+    });
+  }
+}
+loadEnv();
+
 const { countRows, insertIgnore, insertRow, selectOne } = require("./db");
 
 async function runSeed() {
@@ -317,49 +333,23 @@ const faqs = [
   ["Which country is best for my chosen career?", "Every career page includes country-by-country breakdowns: salary bands, demand, visa notes, and top employers, so you can compare before you commit."],
 ];
 
-const insertCategory = db.prepare(
-  `INSERT OR IGNORE INTO categories (name, slug, description, career_count, icon, sort_order) VALUES (?, ?, ?, ?, ?, ?)`
-);
-categories.forEach((c, i) => insertCategory.run(c[0], c[1], c[2], c[3], c[4], i + 1));
+for (let i = 0; i < categories.length; i++) {
+  const c = categories[i];
+  await insertIgnore("categories", { name: c[0], slug: c[1], description: c[2], career_count: c[3], icon: c[4], sort_order: i + 1 });
+}
 
-const insertDetailedCareer = db.prepare(`
-  INSERT INTO careers (
-    slug, title, category_slug, summary, avg_salary, demand_level, growth_potential,
-    difficulty_level, remote_potential, education_requirement, rating, is_featured, is_trending,
-    about_what, about_why, about_suitable, about_not_suitable, about_misconceptions,
-    day_responsibilities, day_schedule, day_challenges, day_tools,
-    skills_technical, skills_soft, skills_industry,
-    education_pathways, certifications, specializations, match_tags,
-    roadmap_beginner, roadmap_intermediate, roadmap_advanced
-  ) VALUES (
-    @slug, @title, @category_slug, @summary, @avg_salary, @demand_level, @growth_potential,
-    @difficulty_level, @remote_potential, @education_requirement, @rating, @is_featured, @is_trending,
-    @about_what, @about_why, @about_suitable, @about_not_suitable, @about_misconceptions,
-    @day_responsibilities, @day_schedule, @day_challenges, @day_tools,
-    @skills_technical, @skills_soft, @skills_industry,
-    @education_pathways, @certifications, @specializations, @match_tags,
-    @roadmap_beginner, @roadmap_intermediate, @roadmap_advanced
-  )
-`);
-
-const insertBasicCareer = db.prepare(`
-  INSERT INTO careers (slug, title, category_slug, summary, avg_salary, demand_level, growth_potential, difficulty_level, remote_potential, is_featured, is_trending, match_tags)
-  VALUES (@slug, @title, @category_slug, @summary, @avg_salary, @demand_level, @growth_potential, @difficulty_level, @remote_potential, @is_featured, @is_trending, @match_tags)
-`);
-
-const insertCountry = db.prepare(`
-  INSERT INTO career_countries (career_id, country, avg_salary, entry_salary, senior_salary, demand_level, competition_level, top_cities, top_employers, visa_info)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`);
-
-const careerCount = db.prepare(`SELECT COUNT(*) AS n FROM careers`).get().n;
+const careerCount = await countRows("careers");
 if (careerCount === 0) {
-  detailedCareers.forEach((c) => {
+  for (const c of detailedCareers) {
     const { countries, ...rest } = c;
-    const info = insertDetailedCareer.run(rest);
-    countries.forEach((row) => insertCountry.run(info.lastInsertRowid, ...row));
-  });
-  basicCareers.forEach((c) => insertBasicCareer.run(c));
+    const inserted = await insertRow("careers", rest);
+    for (const row of countries) {
+      await insertRow("career_countries", { career_id: inserted.id, country: row[0], avg_salary: row[1], entry_salary: row[2], senior_salary: row[3], demand_level: row[4], competition_level: row[5], top_cities: row[6], top_employers: row[7], visa_info: row[8] });
+    }
+  }
+  for (const c of basicCareers) {
+    await insertRow("careers", c);
+  }
 }
 
 const statCount = await countRows("trust_stats");

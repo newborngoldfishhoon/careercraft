@@ -80,7 +80,7 @@ async function insertRow(table, row) {
  * Returns the inserted row or null if it was a conflict.
  */
 async function insertIgnore(table, row) {
-  const { data, error } = await supabase.from(table).upsert(row, { onConflict: "", ignoreDuplicates: true }).select().maybeSingle();
+  const { data, error } = await supabase.from(table).insert(row).select().maybeSingle();
   if (error) {
     // If it's a unique constraint violation, treat it as "ignored"
     if (error.code === "23505") return null;
