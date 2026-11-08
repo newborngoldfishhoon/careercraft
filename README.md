@@ -1,6 +1,8 @@
+
+
 # CareerCraft - Landing Page (full-stack starter)
 
-**please note that this is ai generated readme, as i was running low of time so..!!!**
+**please note that this is ai generated readme, as i was running low of time but this is cross checked and verified, so no need to worry!**
 
 This is the first slice of the larger CareerCraft product spec: the public
 landing page, built as a real full-stack app rather than a static mock.
