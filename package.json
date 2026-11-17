@@ -13,3 +13,4 @@
     "seed": "npm --workspace=backend run seed"
   }
 }
+
